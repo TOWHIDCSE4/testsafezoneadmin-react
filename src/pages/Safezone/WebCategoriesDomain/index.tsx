@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
     Table,
     Card,
@@ -20,20 +20,17 @@ import FilterDataWrapper, {
 } from 'components/filter-data-wrapper'
 import { checkPermission } from 'utils/check-permission'
 import { PERMISSIONS } from 'const/permission'
-import SubscriptionAPI from 'api/SubscriptionAPI'
 import CategoryDomainAPI from 'api/CategoryDomainAPI'
 import moment from 'moment'
-import { DATE_FORMAT } from 'const'
 import AddNewHostModal from './add-new-host'
 
-const { RangePicker } = DatePicker
+const { Search } = Input
 
 const WebCategoriesDomain = () => {
     const [domains, setDomains] = useState([])
     const [isLoading, setLoading] = useState(false)
     const [search, setSearch] = useState({
-        start_date: null,
-        end_date: null
+        host: null
     })
     const [pageSize, setPageSize] = useState(10)
     const [pageNumber, setPageNumber] = useState(1)
@@ -51,9 +48,10 @@ const WebCategoriesDomain = () => {
         const param = {
             page_size: query.page_size,
             page_number: query.page_number,
-            start_date: query.search?.start_date,
-            end_date: query.search?.end_date
+            host: query.search?.host
         }
+
+        console.log(param)
 
         CategoryDomainAPI.getDomains(param)
             .then((res) => {
@@ -82,22 +80,22 @@ const WebCategoriesDomain = () => {
         refetchData()
     }, [])
 
-    const handleRangePicker = (value) => {
-        if (value[0] && value[1] && value[0] < value[1]) {
-            const objDate = {
-                start_date: value[0],
-                end_date: value[1]
-            }
-
+    const onSearch = useCallback(
+        (value) => {
+            console.log(value)
             setPageNumber(1)
-            setSearch(objDate)
+            const searchVal = {
+                host: value
+            }
+            setSearch(searchVal)
             getDomains({
+                search: searchVal,
                 page_number: 1,
-                page_size: pageSize,
-                search: objDate
+                page_size: pageSize
             })
-        }
-    }
+        },
+        [search, pageSize, pageNumber]
+    )
 
     const handleChangePagination = (_pageNumber, _pageSize) => {
         if (pageSize !== _pageSize) {
@@ -167,18 +165,6 @@ const WebCategoriesDomain = () => {
         </Menu>
     )
 
-    const displayPeriod = (value: any) => {
-        switch (value) {
-            case '6_MONTH':
-                return '6 tháng'
-
-            case 'YEARLY':
-                return 'Hàng năm'
-            default:
-                return ''
-        }
-    }
-
     const columns: ColumnsType = [
         {
             title: 'STT',
@@ -225,12 +211,13 @@ const WebCategoriesDomain = () => {
 
     const filterEngines: IFilterEngine[] = [
         {
-            label: 'Date',
+            label: 'Search',
             engine: (
-                <RangePicker
-                    onChange={handleRangePicker}
-                    format={DATE_FORMAT}
-                    value={[search.start_date, search.end_date]}
+                <Search
+                    placeholder='By name'
+                    allowClear
+                    enterButton='Search'
+                    onSearch={_.debounce(onSearch, 250)}
                 />
             )
         }
