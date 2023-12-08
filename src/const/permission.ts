@@ -24,6 +24,12 @@ export const PERMISSIONS = {
     sz_s_edit: 'sz_s_edit',
     sz_s_approve: 'sz_s_approve',
 
+    // SafeZone - Web Category Domain
+    sz_cd_view: 'sz_cd_view',
+    sz_cd_create: 'sz_cd_create',
+    sz_cd_edit: 'sz_cd_edit',
+    sz_cd_delete: 'sz_cd_delete',
+
     // AI
     // AI - Api Key
     ai_ak_view: 'ai_ak_view',

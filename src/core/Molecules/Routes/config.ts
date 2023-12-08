@@ -39,6 +39,16 @@ export const treeConfig = [
                 headerColor: '#f3f3f4',
                 hasBorderBottom: true,
                 component: () => import('pages/Safezone/Subscriptions')
+            },
+            {
+                route: '/admin/web-categories-domain',
+                required: PERMISSIONS.sz_s_view,
+                title: 'Web Categories Domain',
+                icon: 'file-invoice-dollar',
+                isAuthenticated: true,
+                headerColor: '#f3f3f4',
+                hasBorderBottom: true,
+                component: () => import('pages/Safezone/WebCategoriesDomain')
             }
         ]
     },
