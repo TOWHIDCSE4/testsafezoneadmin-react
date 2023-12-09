@@ -15,6 +15,7 @@ import { useForm } from 'antd/lib/form/Form'
 import { MODAL_TYPE } from 'const'
 import SubscriptionAPI from 'api/SubscriptionAPI'
 import CategoryDomainAPI from 'api/CategoryDomainAPI'
+import validator from 'validator'
 
 const { Option } = Select
 
@@ -41,6 +42,14 @@ const AddNewHostModal = ({
         }
     )
     const [form] = useForm()
+
+    const validateURL = (rule, value, callback) => {
+        if (value && !validator.isURL(value)) {
+            callback('Please enter a valid URL for the host field')
+        } else {
+            callback()
+        }
+    }
     const getAllCategories = () => {
         setValues({ isLoadingCategories: true })
         CategoryDomainAPI.getAllCategories({})
@@ -149,9 +158,7 @@ const AddNewHostModal = ({
                 toggleModal(false)
             }}
             title={
-                type === MODAL_TYPE.ADD_NEW
-                    ? 'Add New Domain'
-                    : 'Edit Subscription'
+                type === MODAL_TYPE.ADD_NEW ? 'Add New Domain' : 'Edit Domain'
             }
             footer={[
                 <Button
@@ -180,6 +187,9 @@ const AddNewHostModal = ({
                                 {
                                     required: true,
                                     message: 'This field is required'
+                                },
+                                {
+                                    validator: validateURL
                                 }
                             ]}
                         >

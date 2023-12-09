@@ -30,7 +30,7 @@ const WebCategoriesDomain = () => {
     const [domains, setDomains] = useState([])
     const [isLoading, setLoading] = useState(false)
     const [search, setSearch] = useState({
-        host: null
+        search: null
     })
     const [pageSize, setPageSize] = useState(10)
     const [pageNumber, setPageNumber] = useState(1)
@@ -48,10 +48,8 @@ const WebCategoriesDomain = () => {
         const param = {
             page_size: query.page_size,
             page_number: query.page_number,
-            host: query.search?.host
+            search: query.search?.search
         }
-
-        console.log(param)
 
         CategoryDomainAPI.getDomains(param)
             .then((res) => {
@@ -85,7 +83,7 @@ const WebCategoriesDomain = () => {
             console.log(value)
             setPageNumber(1)
             const searchVal = {
-                host: value
+                search: value
             }
             setSearch(searchVal)
             getDomains({
@@ -214,7 +212,7 @@ const WebCategoriesDomain = () => {
             label: 'Search',
             engine: (
                 <Search
-                    placeholder='By name'
+                    placeholder='By host or category'
                     allowClear
                     enterButton='Search'
                     onSearch={_.debounce(onSearch, 250)}
