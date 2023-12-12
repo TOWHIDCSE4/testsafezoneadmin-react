@@ -75,6 +75,7 @@ export const AuthProvider: FunctionComponent = ({ children }) => {
                 store.set('access_token', response.access_token)
                 store.set('user', newUser)
                 setUser(newUser)
+                store.set('library_test_token', response.library_test_token)
                 setLoading(false)
                 history.push('/')
             }

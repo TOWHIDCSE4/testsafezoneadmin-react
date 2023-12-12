@@ -31,6 +31,7 @@ import { PERMISSIONS } from 'const/permission'
 import { blue, red } from '@ant-design/colors'
 import GenerationResultAiAPI from 'api/GenerationResultAiAPI'
 import GenerationResultModal from './generation-template-result'
+import AddResultToTopicModal from './add-result-to-topic-modal'
 import moment from 'moment'
 import sanitizeHtml from 'sanitize-html'
 
@@ -45,6 +46,14 @@ const { Option } = Select
 
 const GenerationResultManagement = () => {
     const queryUrl = new URLSearchParams(window.location.search)
+    const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
+    const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
+        setSelectedRowKeys(newSelectedRowKeys)
+    }
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: onSelectChange
+    }
     const [values, setValues] = useReducer(
         (state, newState) => ({ ...state, ...newState }),
         {
@@ -54,6 +63,7 @@ const GenerationResultManagement = () => {
             page_number: 1,
             total: 0,
             iShownModal: false,
+            iShownAddToTopicModal: false,
             modalType: null,
             search: '',
             data_info: [],
@@ -112,6 +122,12 @@ const GenerationResultManagement = () => {
             search: values.search.trim()
         })
     }, [])
+
+    const toggleAddToTopicModal = (value) => {
+        setValues({
+            iShownAddToTopicModal: value
+        })
+    }
 
     const toggleModal = (value, type?: MODAL_TYPE) => {
         setValues({
@@ -290,6 +306,16 @@ const GenerationResultManagement = () => {
         <Card title='Quiz results'>
             <FilterDataWrapper
                 extensionOut={[
+                    selectedRowKeys.length > 0 ? (
+                        <Button
+                            type='primary'
+                            onClick={() => toggleAddToTopicModal(true)}
+                        >
+                            Add To Topic
+                        </Button>
+                    ) : (
+                        <></>
+                    ),
                     checkPermission(PERMISSIONS.ai_gr_create) &&
                     queryUrl.get('template_id') ? (
                         <Button type='primary' onClick={() => addNew()}>
@@ -312,6 +338,7 @@ const GenerationResultManagement = () => {
                     current: values.page_number
                 }}
                 rowKey={(record: any) => record.id}
+                rowSelection={rowSelection}
                 scroll={{
                     x: 500,
                     y: 768
@@ -325,6 +352,12 @@ const GenerationResultManagement = () => {
                 toggleModal={toggleModal}
                 type={values.modalType}
                 data={values.data_info}
+                refetchData={refetchData}
+            />
+            <AddResultToTopicModal
+                visible={values.iShownAddToTopicModal}
+                toggleModal={toggleModal}
+                data={selectedRowKeys}
                 refetchData={refetchData}
             />
         </Card>
