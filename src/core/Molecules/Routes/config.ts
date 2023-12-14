@@ -41,7 +41,6 @@ export const treeConfig = [
                 component: () => import('pages/Safezone/Subscriptions')
             },
             {
-
                 route: '/admin/web-categories-domain',
                 required: PERMISSIONS.sz_s_view,
                 title: 'Web Categories Domain',
@@ -53,7 +52,7 @@ export const treeConfig = [
             },
             {
                 route: '/admin/library-tests',
-                required: PERMISSIONS.sz_lt_view,
+                required: PERMISSIONS.sz_s_view,
                 title: 'Library Test',
                 icon: 'book',
                 isAuthenticated: true,

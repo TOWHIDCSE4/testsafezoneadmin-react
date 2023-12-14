@@ -20,7 +20,6 @@ import TextEditor from 'core/Atoms/TextEditor'
 import { IModalProps } from 'const/common'
 import sanitizeHtml from 'sanitize-html'
 import AIGenerateResultAPI from 'api/GenerationResultAiAPI'
-import TrialTestAPI from 'api/LibraryTestAPI'
 
 function sanitize(string: string) {
     return sanitizeHtml(string, {
@@ -63,11 +62,11 @@ const AddResultToTopicModal: FC<IProps> = ({
 
     const fetchTagsTopic = async () => {
         try {
-            const res = await TrialTestAPI.getTagsTopic()
-            console.log(res.data)
-            setValues({
-                tags: res.data
-            })
+            // const res = await TrialTestAPI.getTagsTopic()
+            // console.log(res.data)
+            // setValues({
+            //     tags: res.data
+            // })
         } catch (error) {
             console.error(error)
         }
@@ -75,16 +74,16 @@ const AddResultToTopicModal: FC<IProps> = ({
 
     const fetchTestTopic = async (search) => {
         try {
-            const res = await TrialTestAPI.getAllTopic({
-                publish_status: 'published',
-                page_number: 1,
-                page_size: 100,
-                search
-            })
-            return res.data.map((i) => ({
-                label: `${i.id}-${i.topic}`,
-                value: i.id
-            }))
+            // const res = await TrialTestAPI.getAllTopic({
+            //     publish_status: 'published',
+            //     page_number: 1,
+            //     page_size: 100,
+            //     search
+            // })
+            // return res.data.map((i) => ({
+            //     label: `${i.id}-${i.topic}`,
+            //     value: i.id
+            // }))
         } catch (error) {
             console.error(error)
         }
