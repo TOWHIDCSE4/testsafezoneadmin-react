@@ -38,7 +38,8 @@ const AddNewTopicModal = ({
             folder: [],
             type: [],
             level: [],
-            status: []
+            status: [],
+            tags: []
         }
     )
     const [form] = useForm()
@@ -103,6 +104,21 @@ const AddNewTopicModal = ({
             })
     }
 
+    const getAllTags = () => {
+        LibraryTestApi.getTags({})
+            .then((res) => {
+                if (res) {
+                    setValues({ tags: res })
+                }
+            })
+            .catch((err) => {
+                notification.error({
+                    message: 'Error',
+                    description: err.message
+                })
+            })
+    }
+
     const reset = () => {
         form.resetFields()
         setValues({
@@ -110,7 +126,8 @@ const AddNewTopicModal = ({
             folder: [],
             type: [],
             level: [],
-            status: []
+            status: [],
+            tags: []
         })
     }
 
@@ -123,7 +140,8 @@ const AddNewTopicModal = ({
                 status_id: formData.status_id,
                 level_id: formData.level_id,
                 type_id: formData.type_id,
-                test_time: formData.test_time
+                test_time: formData.test_time,
+                tags: formData.tags
             }
 
             if (type === MODAL_TYPE.ADD_NEW) {
@@ -180,7 +198,8 @@ const AddNewTopicModal = ({
                 status_id: '',
                 level_id: '',
                 type_id: '',
-                test_time: ''
+                test_time: '',
+                tags: []
             }
 
             if (type === MODAL_TYPE.EDIT) {
@@ -190,6 +209,7 @@ const AddNewTopicModal = ({
                 fieldsValue.level_id = data.level[0]._id
                 fieldsValue.type_id = data.type[0]._id
                 fieldsValue.test_time = data.test_time
+                fieldsValue.tags = data.tags
             }
 
             form.setFieldsValue(fieldsValue)
@@ -197,6 +217,7 @@ const AddNewTopicModal = ({
             getAllStatus()
             getAllLevel()
             getAllType()
+            getAllTags()
         }
     }, [visible])
 
@@ -307,9 +328,22 @@ const AddNewTopicModal = ({
                             </Select>
                         </Form.Item>
 
+                        <Form.Item name='tags' label='Tag'>
+                            <Select mode='multiple'>
+                                {values.tags.map((item) => {
+                                    return (
+                                        <Option value={item.id} key={item.id}>
+                                            {item.name}
+                                        </Option>
+                                    )
+                                })}
+                            </Select>
+                        </Form.Item>
+
                         <Form.Item
                             label='Test Time'
                             name='test_time'
+                            labelCol={{ span: 5 }}
                             rules={[
                                 {
                                     required: true,
@@ -317,12 +351,13 @@ const AddNewTopicModal = ({
                                 }
                             ]}
                         >
-                            <Input />
+                            <Input type='number' />
                         </Form.Item>
 
                         <Form.Item
                             name='status_id'
                             label='Publish Status'
+                            labelCol={{ span: 6 }}
                             rules={[
                                 {
                                     required: true,

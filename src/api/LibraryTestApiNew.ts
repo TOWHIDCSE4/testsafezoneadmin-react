@@ -16,6 +16,11 @@ export default class LibraryTestApiNew {
         return ApiSender.get(route, payload)
     }
 
+    public static getTags(payload: object) {
+        const route = `/core/admin/list-library-test-tag`
+        return ApiSender.get(route, payload)
+    }
+
     public static getStatus(payload: object) {
         const route = `/core/admin/list-library-test-status`
         return ApiSender.get(route, payload)
