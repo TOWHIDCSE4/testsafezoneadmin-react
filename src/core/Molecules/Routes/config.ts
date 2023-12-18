@@ -59,6 +59,16 @@ export const treeConfig = [
                 headerColor: '#f3f3f4',
                 hasBorderBottom: true,
                 component: () => import('pages/Safezone/LibraryTests')
+            },
+            {
+                route: '/admin/parents-setting',
+                required: PERMISSIONS.sz_s_view,
+                title: 'Parent Setting Time',
+                icon: 'book',
+                isAuthenticated: true,
+                headerColor: '#f3f3f4',
+                hasBorderBottom: true,
+                component: () => import('pages/Safezone/ParentsSettingTime')
             }
         ]
     },
