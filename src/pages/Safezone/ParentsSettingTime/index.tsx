@@ -117,7 +117,7 @@ const ParentsSettingTime = () => {
     const deleteTime = (record) => {
         setLoading(true)
         const postData = {
-            category_domain_id: record._id
+            parent_setting_id: record._id
         }
         ParentSettingApi.deleteSetting(postData)
             .then((data) => {

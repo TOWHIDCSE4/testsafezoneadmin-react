@@ -8,29 +8,15 @@ import {
     Form,
     Input,
     notification,
-    Select
+    Select,
+    TimePicker
 } from 'antd'
 import { useForm } from 'antd/lib/form/Form'
 import { MODAL_TYPE } from 'const'
 import ParentSettingApi from 'api/ParentSettingApi'
-
+import moment from 'moment'
 
 const { Option } = Select
-
-const Subjects = [
-    {
-        id: 1,
-        value: 'English'
-    },
-    {
-        id: 2,
-        value: 'Mathematics'
-    },
-    {
-        id: 3,
-        value: 'Quizzes'
-    }
-]
 
 interface Props {
     visible: any
@@ -50,24 +36,48 @@ const AddNewTimeModal = ({
         (state, newState) => ({ ...state, ...newState }),
         {
             isLoading: false,
-            quizes: []
+            quizes: [],
+            subjects: []
         }
     )
     const [form] = useForm()
+
+    const getAllSubjects = () => {
+        ParentSettingApi.getAllSubjects({})
+            .then((res) => {
+                if (res) {
+                    setValues({ subjects: res })
+                }
+            })
+            .catch((err) => {
+                notification.error({
+                    message: 'Error',
+                    description: err.message
+                })
+            })
+    }
 
     const reset = () => {
         form.resetFields()
         setValues({
             isLoading: false,
-            categories: []
+            subjects: []
         })
     }
 
     const onSave = useCallback(
         (formData) => {
             setValues({ isLoading: true })
+            const { minutes, seconds } = formData.time.toObject()
+
+            const formattedTime = `${_.padStart(minutes, 2, '0')}:${_.padStart(
+                seconds,
+                2,
+                '0'
+            )}`
+
             const postData = {
-                time: formData.time,
+                time: formattedTime,
                 subject: formData.subject
             }
 
@@ -92,7 +102,7 @@ const AddNewTimeModal = ({
                     .finally(() => setValues({ isLoading: false }))
             } else if (type === MODAL_TYPE.EDIT) {
                 ParentSettingApi.UpdateSetting({
-                    category_domain_id: data._id,
+                    parents_setting_id: data._id,
                     ...postData
                 })
                     .then((res) => {
@@ -120,16 +130,21 @@ const AddNewTimeModal = ({
     useEffect(() => {
         if (visible) {
             const fieldsValue: any = {
-                time: '',
+                time: moment().startOf('day').add(30, 'minutes'),
                 subject: ''
             }
 
             if (type === MODAL_TYPE.EDIT) {
-                fieldsValue.time = data.time
+                const [minutes, seconds] = data.time.split(':')
+                const momentObject = moment()
+                    .startOf('day')
+                    .add({ minutes, seconds })
+                fieldsValue.time = momentObject
                 fieldsValue.subject = data.subject
             }
 
             form.setFieldsValue(fieldsValue)
+            getAllSubjects()
         }
     }, [visible])
 
@@ -174,7 +189,7 @@ const AddNewTimeModal = ({
                                 }
                             ]}
                         >
-                            <Input />
+                            <TimePicker format='mm:ss' />
                         </Form.Item>
 
                         <Form.Item
@@ -188,13 +203,10 @@ const AddNewTimeModal = ({
                             ]}
                         >
                             <Select>
-                                {Subjects.map((item) => {
+                                {values.subjects.map((item) => {
                                     return (
-                                        <Option
-                                            value={item.value}
-                                            key={item.id}
-                                        >
-                                            {item.value}
+                                        <Option value={item.name} key={item.id}>
+                                            {item.name}
                                         </Option>
                                     )
                                 })}

@@ -6,6 +6,11 @@ export default class ParentSettingApi {
         return ApiSender.get(route, payload)
     }
 
+    public static getAllSubjects(payload: object) {
+        const route = `/core/admin/list-all-subjects`
+        return ApiSender.get(route, payload)
+    }
+
     public static deleteSetting(payload: object) {
         const route = `/core/admin/delete-parents-setting`
         return ApiSender.post(route, payload)
