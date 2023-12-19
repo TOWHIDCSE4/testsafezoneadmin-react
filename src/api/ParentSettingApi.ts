@@ -11,6 +11,11 @@ export default class ParentSettingApi {
         return ApiSender.get(route, payload)
     }
 
+    public static getAllQuizes(payload: object) {
+        const route = `/core/admin/list-all-quizes`
+        return ApiSender.get(route, payload)
+    }
+
     public static deleteSetting(payload: object) {
         const route = `/core/admin/delete-parents-setting`
         return ApiSender.post(route, payload)

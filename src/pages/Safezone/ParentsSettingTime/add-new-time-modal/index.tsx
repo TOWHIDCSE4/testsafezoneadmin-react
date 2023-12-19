@@ -15,6 +15,7 @@ import { useForm } from 'antd/lib/form/Form'
 import { MODAL_TYPE } from 'const'
 import ParentSettingApi from 'api/ParentSettingApi'
 import moment from 'moment'
+import AddQuizModal from './add-quiz'
 
 const { Option } = Select
 
@@ -42,6 +43,9 @@ const AddNewTimeModal = ({
     )
     const [form] = useForm()
 
+    const [quizModal, setQuizModal] = useState(false)
+    const [quiz, setQuiz] = useState([])
+
     const getAllSubjects = () => {
         ParentSettingApi.getAllSubjects({})
             .then((res) => {
@@ -55,6 +59,12 @@ const AddNewTimeModal = ({
                     description: err.message
                 })
             })
+    }
+
+    const addQuizes = (vals) => {
+        console.log(vals.selectedRowKeys)
+        setQuiz(vals.selectedRowKeys)
+        setQuizModal(false)
     }
 
     const reset = () => {
@@ -75,10 +85,10 @@ const AddNewTimeModal = ({
                 2,
                 '0'
             )}`
-
             const postData = {
                 time: formattedTime,
-                subject: formData.subject
+                subject: formData.subject,
+                quizes: quiz
             }
 
             if (type === MODAL_TYPE.ADD_NEW) {
@@ -124,7 +134,7 @@ const AddNewTimeModal = ({
                     .finally(() => setValues({ isLoading: false }))
             }
         },
-        [form, type, data]
+        [form, type, data, quiz]
     )
 
     useEffect(() => {
@@ -147,6 +157,14 @@ const AddNewTimeModal = ({
             getAllSubjects()
         }
     }, [visible])
+
+    const setModalVisible = (val) => {
+        if (val === 'Quiz') {
+            setQuizModal(true)
+        } else {
+            setQuizModal(false)
+        }
+    }
 
     return (
         <Modal
@@ -202,7 +220,7 @@ const AddNewTimeModal = ({
                                 }
                             ]}
                         >
-                            <Select>
+                            <Select onChange={(val) => setModalVisible(val)}>
                                 {values.subjects.map((item) => {
                                     return (
                                         <Option value={item.name} key={item.id}>
@@ -215,6 +233,11 @@ const AddNewTimeModal = ({
                     </Form>
                 </Col>
             </Row>
+            <AddQuizModal
+                visible={quizModal}
+                toggleModal={setQuizModal}
+                addQuizes={addQuizes}
+            />
         </Modal>
     )
 }
