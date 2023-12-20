@@ -6,7 +6,7 @@ import {
     Row,
     Col,
     Form,
-    Input,
+    Checkbox,
     notification,
     Select,
     TimePicker
@@ -16,6 +16,7 @@ import { MODAL_TYPE } from 'const'
 import ParentSettingApi from 'api/ParentSettingApi'
 import moment from 'moment'
 import AddQuizModal from './add-quiz'
+import { CheckboxValueType } from 'antd/lib/checkbox/Group'
 
 const { Option } = Select
 
@@ -38,13 +39,13 @@ const AddNewTimeModal = ({
         {
             isLoading: false,
             quizes: [],
-            subjects: []
+            subjects: [],
+            selectedQuizes: []
         }
     )
     const [form] = useForm()
 
-    const [quizModal, setQuizModal] = useState(false)
-    const [quiz, setQuiz] = useState([])
+    const [quizVisible, setQuizVisible] = useState(false)
 
     const getAllSubjects = () => {
         ParentSettingApi.getAllSubjects({})
@@ -61,17 +62,37 @@ const AddNewTimeModal = ({
             })
     }
 
-    const addQuizes = (vals) => {
-        console.log(vals.selectedRowKeys)
-        setQuiz(vals.selectedRowKeys)
-        setQuizModal(false)
+    const getAllQuizes = () => {
+        ParentSettingApi.getAllQuizes({})
+            .then((res) => {
+                if (res) {
+                    const quiz = res.map((item) => {
+                        return item.id
+                    })
+                    setValues({ selectedQuizes: quiz })
+                    setValues({ quizes: res })
+                    if (type === MODAL_TYPE.EDIT && data.subject !== 'Quiz') {
+                        setQuizVisible(false)
+                    } else {
+                        setQuizVisible(true)
+                    }
+                }
+            })
+            .catch((err) => {
+                notification.error({
+                    message: 'Error',
+                    description: err.message
+                })
+            })
     }
 
     const reset = () => {
         form.resetFields()
         setValues({
             isLoading: false,
-            subjects: []
+            quizes: [],
+            subjects: [],
+            selectedQuizes: []
         })
     }
 
@@ -88,7 +109,7 @@ const AddNewTimeModal = ({
             const postData = {
                 time: formattedTime,
                 subject: formData.subject,
-                quizes: quiz
+                quizes: values.selectedQuizes
             }
 
             if (type === MODAL_TYPE.ADD_NEW) {
@@ -134,14 +155,16 @@ const AddNewTimeModal = ({
                     .finally(() => setValues({ isLoading: false }))
             }
         },
-        [form, type, data, quiz]
+        [form, type, data, values.selectedQuizes]
     )
 
     useEffect(() => {
         if (visible) {
             const fieldsValue: any = {
                 time: moment().startOf('day').add(30, 'minutes'),
-                subject: ''
+                subject: 'Quiz',
+                quizes: [],
+                selectedQuizes: []
             }
 
             if (type === MODAL_TYPE.EDIT) {
@@ -150,20 +173,49 @@ const AddNewTimeModal = ({
                     .startOf('day')
                     .add({ minutes, seconds })
                 fieldsValue.time = momentObject
+                if (data.subject === 'Quiz') {
+                    setQuizVisible(true)
+                    setValues({ selectedQuizes: data.quizes })
+                } else {
+                    setQuizVisible(false)
+                }
                 fieldsValue.subject = data.subject
             }
 
             form.setFieldsValue(fieldsValue)
             getAllSubjects()
+            getAllQuizes()
         }
     }, [visible])
 
     const setModalVisible = (val) => {
         if (val === 'Quiz') {
-            setQuizModal(true)
+            setQuizVisible(true)
         } else {
-            setQuizModal(false)
+            setQuizVisible(false)
         }
+    }
+
+    const renderQuiz = (quizes) => {
+        const onChange = (checkedValues: CheckboxValueType[]) => {
+            setValues({ selectedQuizes: checkedValues })
+        }
+
+        return (
+            <Checkbox.Group
+                style={{ width: '100%' }}
+                onChange={onChange}
+                defaultValue={values.selectedQuizes}
+            >
+                <Row>
+                    {quizes.map((item) => (
+                        <Col span={8} key={item.id}>
+                            <Checkbox value={item.id}>{item.name}</Checkbox>
+                        </Col>
+                    ))}
+                </Row>
+            </Checkbox.Group>
+        )
     }
 
     return (
@@ -175,6 +227,8 @@ const AddNewTimeModal = ({
             onCancel={() => {
                 reset()
                 toggleModal(false)
+                refetchData()
+                setQuizVisible(true)
             }}
             title={type === MODAL_TYPE.ADD_NEW ? 'Add New Time' : 'Edit Time'}
             footer={[
@@ -233,11 +287,7 @@ const AddNewTimeModal = ({
                     </Form>
                 </Col>
             </Row>
-            <AddQuizModal
-                visible={quizModal}
-                toggleModal={setQuizModal}
-                addQuizes={addQuizes}
-            />
+            {quizVisible && renderQuiz(values.quizes)}
         </Modal>
     )
 }

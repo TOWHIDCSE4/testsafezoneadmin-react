@@ -46,7 +46,24 @@ const ParentsSettingTime = () => {
                 if (res.pagination && res.pagination.total >= 0) {
                     setTotal(res.pagination.total)
                 }
-                setSettingTime(res.data)
+                const settingValues = res.data.map((item) => {
+                    if (item.quiz.length > 0) {
+                        item.subjectName = item.quiz.reduce(
+                            (acc, cur, index, array) => {
+                                acc += cur.name
+                                if (index < array.length - 1) {
+                                    acc += ', '
+                                }
+                                return acc
+                            },
+                            ''
+                        )
+                    } else {
+                        item.subjectName = item.subject
+                    }
+                    return item
+                })
+                setSettingTime(settingValues)
             })
             .catch((err) => {
                 notify('error', err.message)
@@ -164,7 +181,7 @@ const ParentsSettingTime = () => {
         },
         {
             title: 'Subject',
-            dataIndex: 'subject',
+            dataIndex: 'subjectName',
             key: 'subject',
             render: (text) => text
         },
