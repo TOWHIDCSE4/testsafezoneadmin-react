@@ -1,4 +1,4 @@
-import { IQuiz } from './IQuiz'
+import { EnumQuizLevel, IQuiz } from './IQuiz'
 
 export enum EnumQuestionType {
     MULTI_CHOICE = 1,
@@ -13,12 +13,25 @@ export interface IAnswers {
     text?: string
 }
 
+export interface IStudentAnswers {
+    question_id: string
+    question_level: number
+    question_type: number
+    selected_answer: IAnswers[]
+    user_id: string
+    subject_id: string
+    is_correct: boolean
+}
+
 export interface IQuestion {
     _id: string
+    id: string
     name: string
     description?: string
     answers: IAnswers[]
     question_type: EnumQuestionType
+    question_level?: EnumQuizLevel
+    subject_id?: string
     quiz_id: number //
     quiz: IQuiz //
     display_order: number

@@ -79,6 +79,16 @@ export const treeConfig = [
                 headerColor: '#f3f3f4',
                 hasBorderBottom: true,
                 component: () => import('pages/Safezone/Question')
+            },
+            {
+                route: '/admin/subject-set',
+                required: PERMISSIONS.sz_s_view,
+                title: 'Subject Set',
+                icon: 'book',
+                isAuthenticated: true,
+                headerColor: '#f3f3f4',
+                hasBorderBottom: true,
+                component: () => import('pages/Safezone/SubjectSet')
             }
         ]
     },

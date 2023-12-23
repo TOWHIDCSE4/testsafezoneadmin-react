@@ -11,7 +11,8 @@ import {
     Spin,
     Space,
     Upload,
-    Tag
+    Tag,
+    notification
 } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
 import _ from 'lodash'
@@ -22,6 +23,7 @@ import { EnumQuizLevel } from 'types/IQuiz'
 import QuestionAPI from 'api/QuestionAPI'
 import UploadAPI from 'api/UploadAPI'
 import Answer from './Answer'
+import ParentSettingApi from 'api/ParentSettingApi'
 
 const { TextArea } = Input
 const { Option } = Select
@@ -45,8 +47,25 @@ const QuestionModal: FC<Props> = ({
     const [form] = Form.useForm()
     const [loading, setLoading] = useState(false)
     const [answers, setAnswers] = useState<IAnswers[]>([])
+    const [subjects, setSubjects] = useState([])
+
+    const getAllSubjects = () => {
+        ParentSettingApi.getAllSubjects({})
+            .then((res) => {
+                if (res) {
+                    setSubjects(res)
+                }
+            })
+            .catch((err) => {
+                notification.error({
+                    message: 'Error',
+                    description: err.message
+                })
+            })
+    }
 
     useEffect(() => {
+        getAllSubjects()
         if (visible && type === MODAL_TYPE.EDIT && !_.isEmpty(data)) {
             form.setFieldsValue({
                 ...data
@@ -145,6 +164,13 @@ const QuestionModal: FC<Props> = ({
         },
         [type, form, answers]
     )
+
+    const renderSubjects = () =>
+        subjects.map((item) => (
+            <Option key={item.id} value={item.id}>
+                {item.name}
+            </Option>
+        ))
     const renderQuestionType = () =>
         _.keys(EnumQuestionType)
             .filter((key: any) => !isNaN(Number(EnumQuestionType[key])))
@@ -201,6 +227,28 @@ const QuestionModal: FC<Props> = ({
                         labelAlign='left'
                     >
                         <TextArea placeholder='Enter description' />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Row>
+                <Col span={24}>
+                    <Form.Item
+                        label='Subject'
+                        name='subject_id'
+                        labelAlign='left'
+                        rules={[
+                            {
+                                required: true,
+                                message: 'Subject is required'
+                            }
+                        ]}
+                    >
+                        <Select
+                            style={{ width: '100%' }}
+                            placeholder='Choose subject'
+                        >
+                            {renderSubjects()}
+                        </Select>
                     </Form.Item>
                 </Col>
             </Row>
