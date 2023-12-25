@@ -27,6 +27,7 @@ import ReactAudioPlayer from 'react-audio-player'
 import sanitizeHtml from 'sanitize-html'
 import FilterDataWrapper from 'components/filter-data-wrapper'
 import QuestionModal from './modals/QuestionModal'
+import QuestionGenerationModal from './Question-generation-modal'
 
 function sanitize(string: string) {
     return sanitizeHtml(string, {
@@ -478,13 +479,10 @@ const Questions = ({ ...props }) => {
                 }}
                 sticky
             />
-            <QuestionModal
+            <QuestionGenerationModal
                 visible={visibleModal}
-                type={modalType}
-                typeSearch={typeSearch}
                 data={selectedItem}
                 toggleModal={toggleModal}
-                refetchData={refetchData}
             />
         </Card>
     )
