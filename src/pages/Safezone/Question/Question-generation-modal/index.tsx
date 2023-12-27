@@ -45,6 +45,12 @@ import ParentSettingApi from 'api/ParentSettingApi'
 import { EnumQuestionType } from 'types/IQuestion'
 import QuestionAPI from 'api/QuestionAPI'
 
+function sanitizeTags(input: string): string {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(input, 'text/html')
+    return doc.body.textContent || ''
+}
+
 function sanitize(string: string) {
     return sanitizeHtml(string, {
         allowedTags: [...sanitizeHtml.defaults.allowedTags, 'img']
@@ -182,7 +188,9 @@ const QuestionGenerationModal: FC<IProps> = ({
         setValues({ isLoadingGenerate: true })
         QuestionAPI.generateQuestion(dataPost)
             .then((res) => {
-                setValues({ result_content: res })
+                setValues({
+                    result_content: res
+                })
                 values.result_content = res
                 form.setFieldValue('result_content', res)
             })
@@ -329,17 +337,13 @@ const QuestionGenerationModal: FC<IProps> = ({
             const dataPayload: any = {
                 result_title: value.result_title,
                 result_content: value.result_content,
-                prompt_obj_id: data?.id,
                 params: values.params,
                 category: values.is_show_category ? value.category : null,
                 age: values.is_show_age ? Number(value.age) : null,
-                subject: values.is_show_subject ? value.subject : null,
-                rank: values.is_show_rank ? value.rank : null
+                subject: values.is_show_subject ? value.subject : null
             }
             try {
-                await AITemplateGenerateAPI.createGenerationTemplate(
-                    dataPayload
-                )
+                await QuestionAPI.createLibraryQuestion(dataPayload)
                 notify('success', 'Create successfully')
                 onClose()
             } catch (err) {

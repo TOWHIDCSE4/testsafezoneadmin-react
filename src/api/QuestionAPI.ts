@@ -30,4 +30,9 @@ export default class QuestionAPI {
         const route = `/core/admin/generate-question`
         return ApiSender.post(route, payload)
     }
+
+    public static createLibraryQuestion(payload: object) {
+        const route = `/core/admin/create-library-question`
+        return ApiSender.post(route, payload)
+    }
 }
