@@ -335,10 +335,14 @@ const QuestionGenerationModal: FC<IProps> = ({
 
     const onFinish = useCallback(
         async (value) => {
+            const question_content = await value.result_content.replace(
+                '</p> <p>',
+                '\n\n'
+            )
             setLoading(true)
             const dataPayload: any = {
                 result_title: value.result_title,
-                result_content: value.result_content,
+                result_content: sanitizeTags(question_content),
                 params: values.params,
                 category: values.is_show_category ? value.category : null,
                 age: values.is_show_age ? Number(value.age) : null,
