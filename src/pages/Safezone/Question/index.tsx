@@ -69,7 +69,7 @@ const Questions = ({ ...props }) => {
         if (idSearch && !query.search && !query.question_type) {
             query.idSearch = idSearch
         }
-        QuestionAPI.getQuestions(query)
+        QuestionAPI.getLibraryQuestions(query)
             .then((res) => {
                 if (res.pagination && res.pagination.total >= 0) {
                     setTotal(res.pagination.total)
@@ -191,7 +191,7 @@ const Questions = ({ ...props }) => {
 
     const removeQuestion = useCallback((record) => {
         setLoading(true)
-        QuestionAPI.deleteQuestion({ id: record._id })
+        QuestionAPI.deleteLibraryQuestion({ id: record._id })
             .then((res) => {
                 notify('success', 'Remove successfully')
                 refetchData(typeSearch)
@@ -249,10 +249,10 @@ const Questions = ({ ...props }) => {
 
     const menuActions = (record: any) => (
         <Menu>
-            <Menu.Item key='0' onClick={() => onEdit(record)}>
+            {/* <Menu.Item key='0' onClick={() => onEdit(record)}>
                 <EditOutlined className='mr-2' />
                 Edit
-            </Menu.Item>
+            </Menu.Item> */}
             <Menu.Item
                 disabled={record.active}
                 key='1'
@@ -275,7 +275,7 @@ const Questions = ({ ...props }) => {
                 pageSize * (pageNumber - 1) + index + 1
         },
         {
-            title: 'Question',
+            title: 'Title',
             dataIndex: 'name',
             key: 'name',
             width: 300,
@@ -288,43 +288,46 @@ const Questions = ({ ...props }) => {
             )
         },
         {
+            title: 'Description',
+            dataIndex: 'description',
+            key: 'description',
+            width: 300,
+            render: (text, record) => (
+                <div
+                    dangerouslySetInnerHTML={{
+                        __html: sanitize(text.replace('\\r\\n', ''))
+                    }}
+                />
+            )
+        },
+        {
             title: 'Question Type',
-            dataIndex: 'question_type',
+            dataIndex: 'category',
             key: 'question_type',
             width: 100,
             align: 'center',
-            render: (text) =>
-                _.startCase(_.findKey(EnumQuestionType, (o) => o === text))
+            render: (text) => text
         },
-        {
-            title: 'Question Level',
-            dataIndex: 'question_level',
-            key: 'question_level',
-            width: 100,
-            align: 'center',
-            render: (text) =>
-                _.startCase(_.findKey(EnumQuizLevel, (o) => o === text))
-        },
-        {
-            title: 'Answers',
-            dataIndex: 'answers',
-            key: 'answers',
-            width: 250,
-            render: (text) => (
-                <>
-                    {text.map((item, index) => (
-                        <p
-                            key={index}
-                            style={{
-                                color: item.is_correct ? '#52c41a' : '#000'
-                            }}
-                        >
-                            {item.label}. {item.text}{' '}
-                        </p>
-                    ))}
-                </>
-            )
-        },
+        // {
+        //     title: 'Answers',
+        //     dataIndex: 'answers',
+        //     key: 'answers',
+        //     width: 250,
+        //     render: (text) => (
+        //         <>
+        //             {text.map((item, index) => (
+        //                 <p
+        //                     key={index}
+        //                     style={{
+        //                         color: item.is_correct ? '#52c41a' : '#000'
+        //                     }}
+        //                 >
+        //                     {item.label}. {item.text}{' '}
+        //                 </p>
+        //             ))}
+        //         </>
+        //     )
+        // },
         // {
         //     title: 'Media',
         //     dataIndex: 'id',
@@ -401,19 +404,19 @@ const Questions = ({ ...props }) => {
     ]
 
     const filterEngines = [
-        {
-            label: 'Search',
-            engine: (
-                <Search
-                    placeholder='Search by name'
-                    style={{ width: '100%' }}
-                    onSearch={_.debounce(onSearchString, 250)}
-                    // value={searchString}
-                    enterButton='Search'
-                    allowClear
-                />
-            )
-        },
+        // {
+        //     label: 'Search',
+        //     engine: (
+        //         <Search
+        //             placeholder='Search by title'
+        //             style={{ width: '100%' }}
+        //             onSearch={_.debounce(onSearchString, 250)}
+        //             // value={searchString}
+        //             enterButton='Search'
+        //             allowClear
+        //         />
+        //     )
+        // },
         {
             label: 'Type',
             engine: (
@@ -425,9 +428,13 @@ const Questions = ({ ...props }) => {
                     <Select.Option value={0} default>
                         All
                     </Select.Option>
-                    <Select.Option value={1}>MULTI_CHOICE</Select.Option>
-                    <Select.Option value={2}>FILL_ANSWER</Select.Option>
-                    <Select.Option value={3}>ONE_CHOICE</Select.Option>
+                    <Select.Option value='MULTI_CHOICE'>
+                        MULTI_CHOICE
+                    </Select.Option>
+                    <Select.Option value='FILL_ANSWER'>
+                        FILL_ANSWER
+                    </Select.Option>
+                    <Select.Option value='ONE_CHOICE'>ONE_CHOICE</Select.Option>
                 </Select>
             )
         }
@@ -483,6 +490,7 @@ const Questions = ({ ...props }) => {
                 visible={visibleModal}
                 data={selectedItem}
                 toggleModal={toggleModal}
+                refetchData={refetchData}
             />
         </Card>
     )

@@ -60,12 +60,14 @@ interface IProps extends IModalProps {
     visible: boolean
     toggleModal: (val: boolean) => void
     data?: any
+    refetchData: any
 }
 
 const QuestionGenerationModal: FC<IProps> = ({
     visible,
     toggleModal,
-    data
+    data,
+    refetchData
 }) => {
     const { RangePicker } = DatePicker
     const { Option } = Select
@@ -346,6 +348,7 @@ const QuestionGenerationModal: FC<IProps> = ({
                 await QuestionAPI.createLibraryQuestion(dataPayload)
                 notify('success', 'Create successfully')
                 onClose()
+                refetchData()
             } catch (err) {
                 notify('error', err.message)
             }
