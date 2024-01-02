@@ -21,6 +21,7 @@ import {
     ArrowRightOutlined,
     CopyOutlined
 } from '@ant-design/icons'
+import axios, { AxiosResponse, AxiosError } from 'axios'
 import TemplateAPI from 'api/TemplateAPI'
 import _ from 'lodash'
 import { EnumTemplateAIStatus, MODAL_TYPE } from 'const/status'
@@ -44,6 +45,9 @@ import './style.scss'
 import ParentSettingApi from 'api/ParentSettingApi'
 import { EnumQuestionType } from 'types/IQuestion'
 import QuestionAPI from 'api/QuestionAPI'
+import * as store from 'utils/storage'
+
+const queryString = require('query-string')
 
 function sanitizeTags(input: string): string {
     const parser = new DOMParser()
@@ -70,10 +74,14 @@ const QuestionGenerationModal: FC<IProps> = ({
     refetchData
 }) => {
     const { RangePicker } = DatePicker
+
     const { Option } = Select
     const [form] = Form.useForm()
     const [isLoading, setLoading] = useState(false)
     const [subjects, setSubjects] = useState([])
+    const [topics, setTopics] = useState([])
+    const TRIAL_TEST_URL = process.env.REACT_APP_TRIAL_TEST_API_URL
+    const auth_token = store.get('library_test_token')
 
     const [values, setValues] = useReducer(
         (state, newState) => ({ ...state, ...newState }),
@@ -86,6 +94,7 @@ const QuestionGenerationModal: FC<IProps> = ({
             category: data?.category_obj_id || null,
             age: 10,
             subject: null,
+            topics: null,
             rank: null,
             prompt: null,
             params: {
@@ -116,6 +125,127 @@ const QuestionGenerationModal: FC<IProps> = ({
             })
     }
 
+    const getLibraryTopics = async () => {
+        const params = {
+            page: 1,
+            creator_oid: '',
+
+            folder_filter: '',
+
+            test_type_filter: '',
+
+            status_filter: '',
+
+            name_filter: '',
+
+            tags_filter: ''
+        }
+
+        axios.defaults.baseURL = TRIAL_TEST_URL
+        const AUTH_TOKEN = store.get('library_test_token')
+        axios.defaults.headers.common.authorization = AUTH_TOKEN
+        return axios
+            .get(`${TRIAL_TEST_URL}/core/admin/trial-test/data-topics`, {
+                params,
+                paramsSerializer(_params) {
+                    return queryString.stringify(_params, {
+                        skipNull: true,
+                        skipEmptyString: true
+                    })
+                }
+            })
+            .then((res: AxiosResponse) => {
+                if (res.status === 200 && res.data.code === '10000') {
+                    setTopics(res.data.data.data)
+                }
+            })
+            .catch((error: AxiosError) => {
+                console.log(error)
+            })
+        // const axiosInstance = axios.create({
+        //     baseURL: 'http://127.0.0.1:8000/admin/trial-test', // Replace with your API endpoint
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         Authorization: `Bearer ${auth_token}`
+        //     },
+        //     withCredentials: true // Enable sending cookies with the request (if necessary)
+        // })
+        // const params = {
+        //     page :1,
+        //     creator_oid:'',
+
+        //     folder_filter:'',
+
+        //     test_type_filter:'',
+
+        //     status_filter: '',
+
+        //     name_filter: '',
+
+        //     tags_filter:''
+
+        //     publish_status: 'published',
+        //     folder_filter: '',
+        //     test_type_filter: '',
+        //     status_filter: '',
+        //     name_filter: '',
+        //     search: '',
+        //     tags_filter: ''
+        // }
+
+        // const params = {
+        //     page: 1,
+        //     creator_oid: '',
+
+        //     folder_filter: '',
+
+        //     test_type_filter: '',
+
+        //     status_filter: '',
+
+        //     name_filter: '',
+
+        //     tags_filter: ''
+        // }
+        // const url = `${TRIAL_TEST_URL}/api/v1/core/admin/trial-test/all-topic`
+        // await axios
+        //     .get(url, {
+        //         params,
+        //         paramsSerializer(_params) {
+        //             return queryString.stringify(_params, {
+        //                 skipNull: true,
+        //                 skipEmptyString: true
+        //             })
+        //         }
+        //     })
+        //     .then((res: AxiosResponse) => {
+        //         if (res.status === 200 && res.data.code === '10000') {
+        //             setTopics(res.data.data.data)
+        //         }
+        //     })
+        //     .catch((error: AxiosError) => {
+        //         console.log(error)
+        //     })
+
+        // axiosInstance
+        //     .get('/core/admin/trial-test/data-topics', {
+        //         params,
+        //         paramsSerializer(_params) {
+        //             return queryString.stringify(_params, {
+        //                 skipNull: true,
+        //                 skipEmptyString: true
+        //             })
+        //         }
+        //     })
+        //     .then((response) => {
+        //         console.log('Response:', response.data)
+        //     })
+        //     .catch((error) => {
+        //         // Handle the error
+        //         console.error('Error:', error)
+        //     })
+    }
+
     const [valueRank, setValueRank] = useReducer(
         (state, newState) => ({ ...state, ...newState }),
         {
@@ -131,6 +261,7 @@ const QuestionGenerationModal: FC<IProps> = ({
 
     useEffect(() => {
         if (visible) {
+            getLibraryTopics()
             form.resetFields()
             setValues({ result_content: null })
             values.result_content = null
@@ -220,6 +351,13 @@ const QuestionGenerationModal: FC<IProps> = ({
                 return subjects.map((item: any, index) => (
                     <Option key={`s${item.id}`} value={item.id}>
                         {`${item.name} `}
+                    </Option>
+                ))
+
+            case 'topic':
+                return topics.map((item: any, index) => (
+                    <Option key={`s${item.id}`} value={item.id}>
+                        {`${item.topic} `}
                     </Option>
                 ))
 
@@ -333,6 +471,59 @@ const QuestionGenerationModal: FC<IProps> = ({
         toggleModal(false)
     }, [])
 
+    const insertQuestion = async (questionData) => {
+        const qna = questionData.map((item, index) => {
+            return {
+                order: index + 1,
+                content: item.description,
+                voice_content: false,
+                voice_answer: false,
+                correct: item.correct_answer.map((i) => {
+                    return { subCorrect: i.text }
+                }),
+                incorrect: item.incorrect_answer.map((i) => {
+                    return { ic: i.text }
+                })
+            }
+        })
+        const formData = {
+            question_id: null,
+            topic_id: questionData[0].topics,
+            section_id: 1,
+            title: questionData[0].name,
+            voice_title: 0,
+            voice_answer: 0,
+            scores: 1,
+            type_question: 2,
+            category: 1,
+            url_audio_title: null,
+            url_main_audio: null,
+            url_main_image: null,
+            picture_bellow_text: 0,
+            content_question_main: questionData[0].title,
+            voice_content_main: 0,
+            array_qna_question: JSON.stringify(qna)
+        }
+
+        axios.defaults.baseURL = TRIAL_TEST_URL
+        const AUTH_TOKEN = store.get('library_test_token')
+        axios.defaults.headers.common.authorization = AUTH_TOKEN
+        return axios
+            .post(
+                `${TRIAL_TEST_URL}/core/admin/trial-test/save-question`,
+                formData
+            )
+            .then((res: AxiosResponse) => {
+                console.log(res)
+                if (res.status === 200 && res.data.code === '10000') {
+                    console.log(res)
+                }
+            })
+            .catch((error: AxiosError) => {
+                console.log(error)
+            })
+    }
+
     const onFinish = useCallback(
         async (value) => {
             const question_content = await value.result_content.replace(
@@ -346,13 +537,21 @@ const QuestionGenerationModal: FC<IProps> = ({
                 params: values.params,
                 category: values.is_show_category ? value.category : null,
                 age: values.is_show_age ? Number(value.age) : null,
-                subject: values.is_show_subject ? value.subject : null
+                subject: values.is_show_subject ? value.subject : null,
+                topics: value.topics
             }
             try {
-                await QuestionAPI.createLibraryQuestion(dataPayload)
-                notify('success', 'Create successfully')
-                onClose()
-                refetchData()
+                await QuestionAPI.createLibraryQuestion(dataPayload).then(
+                    (res) => {
+                        console.log(res)
+                        if (res) {
+                            insertQuestion(res)
+                            notify('success', 'Create successfully')
+                            onClose()
+                            refetchData()
+                        }
+                    }
+                )
             } catch (err) {
                 notify('error', err.message)
             }
@@ -396,6 +595,17 @@ const QuestionGenerationModal: FC<IProps> = ({
                             >
                                 {data?.description}
                             </div>
+
+                            <Form.Item label='Topics' name='topics'>
+                                <Select
+                                    placeholder='Choose Topic'
+                                    showSearch
+                                    autoClearSearchValue
+                                    filterOption={false}
+                                >
+                                    {renderParam('topic')}
+                                </Select>
+                            </Form.Item>
                             {values.is_show_category && (
                                 <Form.Item label='Category' name='category'>
                                     <Select
