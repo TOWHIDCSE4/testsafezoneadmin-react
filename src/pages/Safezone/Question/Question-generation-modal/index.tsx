@@ -40,6 +40,7 @@ import {
     toneParam
 } from 'const/ai-template'
 import AITemplateGenerateAPI from 'api/GenerationTemplateAiAPI'
+import TrialTestServiceAPI from 'api/TrialTestServiceAPI'
 import sanitizeHtml from 'sanitize-html'
 import './style.scss'
 import ParentSettingApi from 'api/ParentSettingApi'
@@ -80,8 +81,7 @@ const QuestionGenerationModal: FC<IProps> = ({
     const [isLoading, setLoading] = useState(false)
     const [subjects, setSubjects] = useState([])
     const [topics, setTopics] = useState([])
-    const TRIAL_TEST_URL = process.env.REACT_APP_TRIAL_TEST_API_URL
-    const auth_token = store.get('library_test_token')
+    const [sectionId, setSectionId] = useState(1)
 
     const [values, setValues] = useReducer(
         (state, newState) => ({ ...state, ...newState }),
@@ -127,123 +127,13 @@ const QuestionGenerationModal: FC<IProps> = ({
 
     const getLibraryTopics = async () => {
         const params = {
-            page: 1,
-            creator_oid: '',
-
-            folder_filter: '',
-
-            test_type_filter: '',
-
-            status_filter: '',
-
-            name_filter: '',
-
-            tags_filter: ''
+            page: 1
         }
-
-        axios.defaults.baseURL = TRIAL_TEST_URL
-        const AUTH_TOKEN = store.get('library_test_token')
-        axios.defaults.headers.common.authorization = AUTH_TOKEN
-        return axios
-            .get(`${TRIAL_TEST_URL}/core/admin/trial-test/data-topics`, {
-                params,
-                paramsSerializer(_params) {
-                    return queryString.stringify(_params, {
-                        skipNull: true,
-                        skipEmptyString: true
-                    })
-                }
-            })
-            .then((res: AxiosResponse) => {
-                if (res.status === 200 && res.data.code === '10000') {
-                    setTopics(res.data.data.data)
-                }
-            })
-            .catch((error: AxiosError) => {
-                console.log(error)
-            })
-        // const axiosInstance = axios.create({
-        //     baseURL: 'http://127.0.0.1:8000/admin/trial-test', // Replace with your API endpoint
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         Authorization: `Bearer ${auth_token}`
-        //     },
-        //     withCredentials: true // Enable sending cookies with the request (if necessary)
-        // })
-        // const params = {
-        //     page :1,
-        //     creator_oid:'',
-
-        //     folder_filter:'',
-
-        //     test_type_filter:'',
-
-        //     status_filter: '',
-
-        //     name_filter: '',
-
-        //     tags_filter:''
-
-        //     publish_status: 'published',
-        //     folder_filter: '',
-        //     test_type_filter: '',
-        //     status_filter: '',
-        //     name_filter: '',
-        //     search: '',
-        //     tags_filter: ''
-        // }
-
-        // const params = {
-        //     page: 1,
-        //     creator_oid: '',
-
-        //     folder_filter: '',
-
-        //     test_type_filter: '',
-
-        //     status_filter: '',
-
-        //     name_filter: '',
-
-        //     tags_filter: ''
-        // }
-        // const url = `${TRIAL_TEST_URL}/api/v1/core/admin/trial-test/all-topic`
-        // await axios
-        //     .get(url, {
-        //         params,
-        //         paramsSerializer(_params) {
-        //             return queryString.stringify(_params, {
-        //                 skipNull: true,
-        //                 skipEmptyString: true
-        //             })
-        //         }
-        //     })
-        //     .then((res: AxiosResponse) => {
-        //         if (res.status === 200 && res.data.code === '10000') {
-        //             setTopics(res.data.data.data)
-        //         }
-        //     })
-        //     .catch((error: AxiosError) => {
-        //         console.log(error)
-        //     })
-
-        // axiosInstance
-        //     .get('/core/admin/trial-test/data-topics', {
-        //         params,
-        //         paramsSerializer(_params) {
-        //             return queryString.stringify(_params, {
-        //                 skipNull: true,
-        //                 skipEmptyString: true
-        //             })
-        //         }
-        //     })
-        //     .then((response) => {
-        //         console.log('Response:', response.data)
-        //     })
-        //     .catch((error) => {
-        //         // Handle the error
-        //         console.error('Error:', error)
-        //     })
+        await TrialTestServiceAPI.getLibraryTopics(params).then(
+            (ltopics: []) => {
+                setTopics(ltopics)
+            }
+        )
     }
 
     const [valueRank, setValueRank] = useReducer(
@@ -489,7 +379,7 @@ const QuestionGenerationModal: FC<IProps> = ({
         const formData = {
             question_id: null,
             topic_id: questionData[0].topics,
-            section_id: 1,
+            section_id: sectionId,
             title: questionData[0].name,
             voice_title: 0,
             voice_answer: 0,
@@ -505,23 +395,7 @@ const QuestionGenerationModal: FC<IProps> = ({
             array_qna_question: JSON.stringify(qna)
         }
 
-        axios.defaults.baseURL = TRIAL_TEST_URL
-        const AUTH_TOKEN = store.get('library_test_token')
-        axios.defaults.headers.common.authorization = AUTH_TOKEN
-        return axios
-            .post(
-                `${TRIAL_TEST_URL}/core/admin/trial-test/save-question`,
-                formData
-            )
-            .then((res: AxiosResponse) => {
-                console.log(res)
-                if (res.status === 200 && res.data.code === '10000') {
-                    console.log(res)
-                }
-            })
-            .catch((error: AxiosError) => {
-                console.log(error)
-            })
+        await TrialTestServiceAPI.saveTrialTestQuestion(formData)
     }
 
     const onFinish = useCallback(
@@ -540,6 +414,7 @@ const QuestionGenerationModal: FC<IProps> = ({
                 subject: values.is_show_subject ? value.subject : null,
                 topics: value.topics
             }
+
             try {
                 await QuestionAPI.createLibraryQuestion(dataPayload).then(
                     (res) => {
@@ -557,8 +432,16 @@ const QuestionGenerationModal: FC<IProps> = ({
             }
             setLoading(false)
         },
-        [data, form]
+        [data, form, sectionId]
     )
+
+    const selectedTopic = (val) => {
+        const find = topics.find((i) => i.id === val)
+        if (typeof find !== 'undefined') {
+            const section = find.section_ids.split(',')[0]
+            setSectionId(section)
+        }
+    }
 
     const renderBody = () => (
         <>
@@ -602,6 +485,7 @@ const QuestionGenerationModal: FC<IProps> = ({
                                     showSearch
                                     autoClearSearchValue
                                     filterOption={false}
+                                    onChange={(e) => selectedTopic(e)}
                                 >
                                     {renderParam('topic')}
                                 </Select>
