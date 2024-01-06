@@ -6,33 +6,7 @@ const TRIAL_TEST_URL = process.env.REACT_APP_TRIAL_TEST_API_URL
 const queryString = require('query-string')
 
 export default class TrialTestServiceAPI {
-    public static async getLibraryTopics(payload: object) {
-        const data = []
-        const response = await TrialTestServiceAPI.getTopics(payload)
-        if (response) {
-            data.push(response.data.data.data)
-            if (response.data.next_page_url !== null) {
-                const nextRes = await TrialTestServiceAPI.getTopics({
-                    page: 2
-                })
-                if (nextRes) {
-                    data.push(nextRes.data.data.data)
-                    if (nextRes.data.next_page_url !== null) {
-                        const lastRes = await TrialTestServiceAPI.getTopics({
-                            page: 3
-                        })
-                        if (lastRes) {
-                            data.push(lastRes.data.data.data)
-                        }
-                    }
-                }
-            }
-        }
-
-        return data.flat().filter((i) => i.section_ids !== null)
-    }
-
-    private static async getTopics(params: Object) {
+    public static async getTopics(params: Object) {
         try {
             axios.defaults.baseURL = TRIAL_TEST_URL
             axios.defaults.headers.common.authorization =
@@ -48,6 +22,26 @@ export default class TrialTestServiceAPI {
                         })
                     }
                 }
+            )
+
+            if (response.status === 200 && response.data.code === '10000') {
+                return response
+            }
+        } catch (error) {
+            console.error(error)
+        }
+
+        return null
+    }
+
+    public static async getSections(params: Object) {
+        try {
+            axios.defaults.baseURL = TRIAL_TEST_URL
+            axios.defaults.headers.common.authorization =
+                store.get('library_test_token')
+            const response = await axios.post(
+                '/core/admin/trial-test/data-questions',
+                params
             )
 
             if (response.status === 200 && response.data.code === '10000') {

@@ -1,4 +1,12 @@
-import { FC, memo, useCallback, useEffect, useReducer, useState } from 'react'
+import {
+    FC,
+    useMemo,
+    memo,
+    useCallback,
+    useEffect,
+    useReducer,
+    useState
+} from 'react'
 import {
     Modal,
     Button,
@@ -21,34 +29,19 @@ import {
     ArrowRightOutlined,
     CopyOutlined
 } from '@ant-design/icons'
-import axios, { AxiosResponse, AxiosError } from 'axios'
-import TemplateAPI from 'api/TemplateAPI'
 import _ from 'lodash'
 import { EnumTemplateAIStatus, MODAL_TYPE } from 'const/status'
 import { notify } from 'utils/notify'
-import { EnumTemplateType } from 'types'
 import TextEditor from 'core/Atoms/TextEditor'
 import { IModalProps } from 'const/common'
-import PromptAPI from 'api/PromptAiAPI'
-import PromptParamAiAPI from 'api/PromptParamAiAPI'
-import TextArea from 'antd/lib/input/TextArea'
 import moment from 'moment'
-import {
-    EnumTypeParamAI,
-    languageParam,
-    qualityParam,
-    toneParam
-} from 'const/ai-template'
-import AITemplateGenerateAPI from 'api/GenerationTemplateAiAPI'
+import { languageParam, qualityParam, toneParam } from 'const/ai-template'
 import TrialTestServiceAPI from 'api/TrialTestServiceAPI'
 import sanitizeHtml from 'sanitize-html'
 import './style.scss'
 import ParentSettingApi from 'api/ParentSettingApi'
 import { EnumQuestionType } from 'types/IQuestion'
 import QuestionAPI from 'api/QuestionAPI'
-import * as store from 'utils/storage'
-
-const queryString = require('query-string')
 
 function sanitizeTags(input: string): string {
     const parser = new DOMParser()
@@ -80,8 +73,9 @@ const QuestionGenerationModal: FC<IProps> = ({
     const [form] = Form.useForm()
     const [isLoading, setLoading] = useState(false)
     const [subjects, setSubjects] = useState([])
-    const [topics, setTopics] = useState([])
+    const [sectionVisible, setSectionVisible] = useState(false)
     const [sectionId, setSectionId] = useState(1)
+    const [sections, setSections] = useState([])
 
     const [values, setValues] = useReducer(
         (state, newState) => ({ ...state, ...newState }),
@@ -94,7 +88,6 @@ const QuestionGenerationModal: FC<IProps> = ({
             category: data?.category_obj_id || null,
             age: 10,
             subject: null,
-            topics: null,
             rank: null,
             prompt: null,
             params: {
@@ -107,6 +100,17 @@ const QuestionGenerationModal: FC<IProps> = ({
             search: '',
             result_title: '',
             result_content: ''
+        }
+    )
+
+    const [valueTopic, setValueTopic] = useReducer(
+        (state, newState) => ({ ...state, ...newState }),
+        {
+            data: [],
+            isLoading: false,
+            page_size: 10,
+            page_number: 1,
+            total: 0
         }
     )
 
@@ -125,16 +129,59 @@ const QuestionGenerationModal: FC<IProps> = ({
             })
     }
 
-    const getLibraryTopics = async () => {
-        const params = {
-            page: 1
+    const getAllSections = (topic_id) => {
+        const param = {
+            array_sort: [],
+            ids_sort: [],
+            section_id: null,
+            topic_id,
+            type: 'basic'
         }
-        await TrialTestServiceAPI.getLibraryTopics(params).then(
-            (ltopics: []) => {
-                setTopics(ltopics)
-            }
-        )
+        TrialTestServiceAPI.getSections(param)
+            .then((res) => {
+                if (res) {
+                    setSections(res.data.data)
+                    setSectionVisible(true)
+                }
+            })
+            .catch((err) => {
+                notification.error({
+                    message: 'Error',
+                    description: err.message
+                })
+            })
     }
+
+    const getTrialTestTopics = useCallback(
+        async (query: { page?: number }) => {
+            setValueTopic({ isLoading: true })
+            // eslint-disable-next-line @typescript-eslint/no-shadow
+            const { data } = valueTopic
+            await TrialTestServiceAPI.getTopics({
+                page: query.page
+            })
+                .then((res) => {
+                    if (res) {
+                        let newData = [...res.data.data.data]
+                        if (query.page > 1) {
+                            newData = [...data, ...res.data.data.data]
+                        }
+                        setValueTopic({
+                            data: newData,
+                            total: res.data.data.total
+                        })
+                    }
+                })
+                .catch((err) => {
+                    notification.error({
+                        message: 'Error',
+                        description: err.message
+                    })
+                })
+                .finally(() => setValueTopic({ isLoading: false }))
+        },
+        [valueTopic]
+    )
 
     const [valueRank, setValueRank] = useReducer(
         (state, newState) => ({ ...state, ...newState }),
@@ -151,11 +198,13 @@ const QuestionGenerationModal: FC<IProps> = ({
 
     useEffect(() => {
         if (visible) {
-            getLibraryTopics()
             form.resetFields()
             setValues({ result_content: null })
             values.result_content = null
             getAllSubjects()
+            getTrialTestTopics({
+                ...valueTopic
+            })
             if (data) {
                 form.setFieldsValue({
                     category: data?.category_obj_id
@@ -226,6 +275,20 @@ const QuestionGenerationModal: FC<IProps> = ({
             .finally(() => setValues({ isLoadingGenerate: false }))
     }
 
+    const loadMoreParam = () => (event) => {
+        const { target } = event
+        if (!valueTopic.isLoading) {
+            const { total, page_size, page_number } = valueTopic
+            if (total > page_size * page_number) {
+                const newPageNumber = valueTopic.page_number + 1
+                setValueTopic({ page_number: newPageNumber })
+                getTrialTestTopics({
+                    page: newPageNumber
+                })
+            }
+        }
+    }
+
     const renderParam = (type: any) => {
         switch (type) {
             case 'category':
@@ -245,9 +308,20 @@ const QuestionGenerationModal: FC<IProps> = ({
                 ))
 
             case 'topic':
-                return topics.map((item: any, index) => (
-                    <Option key={`s${item.id}`} value={item.id}>
+                return valueTopic?.data.map((item: any, index) => (
+                    <Option
+                        key={`s${item.id}`}
+                        value={item.id}
+                        disabled={item.section_ids === null}
+                    >
                         {`${item.topic} `}
+                    </Option>
+                ))
+
+            case 'section':
+                return sections.map((item: any, index) => (
+                    <Option key={`s${item.id}`} value={item.id}>
+                        {`${item.section_name} `}
                     </Option>
                 ))
 
@@ -379,7 +453,7 @@ const QuestionGenerationModal: FC<IProps> = ({
         const formData = {
             question_id: null,
             topic_id: questionData[0].topics,
-            section_id: sectionId,
+            section_id: questionData[0].section,
             title: questionData[0].name,
             voice_title: 0,
             voice_answer: 0,
@@ -412,7 +486,8 @@ const QuestionGenerationModal: FC<IProps> = ({
                 category: values.is_show_category ? value.category : null,
                 age: values.is_show_age ? Number(value.age) : null,
                 subject: values.is_show_subject ? value.subject : null,
-                topics: value.topics
+                topics: value.topics,
+                section: value.section
             }
 
             try {
@@ -432,15 +507,14 @@ const QuestionGenerationModal: FC<IProps> = ({
             }
             setLoading(false)
         },
-        [data, form, sectionId]
+        [data, form]
     )
 
     const selectedTopic = (val) => {
-        const find = topics.find((i) => i.id === val)
-        if (typeof find !== 'undefined') {
-            const section = find.section_ids.split(',')[0]
-            setSectionId(section)
-        }
+        getAllSections(val)
+        form.setFieldsValue({
+            section: ''
+        })
     }
 
     const renderBody = () => (
@@ -482,14 +556,25 @@ const QuestionGenerationModal: FC<IProps> = ({
                             <Form.Item label='Topics' name='topics'>
                                 <Select
                                     placeholder='Choose Topic'
-                                    showSearch
-                                    autoClearSearchValue
-                                    filterOption={false}
+                                    loading={valueTopic.isLoading}
+                                    onPopupScroll={loadMoreParam()}
                                     onChange={(e) => selectedTopic(e)}
                                 >
                                     {renderParam('topic')}
                                 </Select>
                             </Form.Item>
+                            {sectionVisible && (
+                                <Form.Item label='Sections' name='section'>
+                                    <Select
+                                        placeholder='Choose section'
+                                        showSearch
+                                        autoClearSearchValue
+                                        filterOption={false}
+                                    >
+                                        {renderParam('section')}
+                                    </Select>
+                                </Form.Item>
+                            )}
                             {values.is_show_category && (
                                 <Form.Item label='Category' name='category'>
                                     <Select
